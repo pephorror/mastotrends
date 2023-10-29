@@ -1,0 +1,64 @@
+### SACA UNA LISTA DE SERVIDORES DE MASTODON Y AGRUPA LOS TAGS POR POPULARIDAD
+
+import requests
+from bs4 import BeautifulSoup
+import json
+
+# variables
+servidores = [] #para guardar la lista de servidores
+lista_total = [] #lista total de tags encontrados
+result_dict = {} #diccionario de tags agrupados
+n_servers_on = 0
+
+servidores = ["https://metalhead.club", "https://mastodon.social", "https://mastodon.online", "https://mas.to", "https://mastodon.green", "https://mstdn.social", "https://climatejustice.social",
+              "https://fosstodon.org", "https://ravenation.club", "https://Octodon.social", "https://mastodon.art", "https://mastodon.xyz", "https://mastodon.uno","https://mstdn.social", "https://mastodon.world",
+              "https://universeodon.com", "https://social.vivaldi.net", "https://toot.community", "https://mstdn.party", "https://federated.press", "https://toad.social", "https://flipboard.social",
+              "https://guitar.rodeo", "https://musicworld.social", "https://drumstodon.net", "https://skastodon.com", "https://epsilon.social", "https://rap.social", "https://sunny.garden", "https://musicians.today",
+              "https://apobangpo.space", "https://musician.social", "https://metalverse.social"] 
+
+#########GET THE TRENDS
+for serv in servidores:
+    try:
+        response = requests.get(serv + "/api/v1/trends/tags?limit=100").text
+        try:
+            objeto = json.loads(response)
+            for o in objeto:
+                try:
+                    lista_total.append([o['name'], o['history'][0]['accounts'], o['history'][0]['uses']])
+                    n_servers_on += 1
+                except:
+                    print("ERROR: Something weird happened in " + serv)
+            print("SUCCESS: ", serv)
+        except:
+            print("ErrOR: " + str(serv))
+
+    except:
+        print("server error")
+        
+# Group by values (put together same trends from different servers)
+for item in lista_total:
+    key = item[0].lower()
+    value1 = int(item[1])
+    value2 = int(item[2])
+    if key in result_dict:
+        result_dict[key][0] += value1
+        result_dict[key][1] += value2
+    else:
+        result_dict[key] = [value1, value2]
+sorted_dict = dict(sorted(result_dict.items(), key=lambda item: item[1][0], reverse=True))
+
+# Convert dictionary to list of lists to print easily
+lista_depurada = [[key, value[0], value[1]] for key, value in sorted_dict.items()]
+#print(lista_depurada)
+lista_toot = []
+#contador_tags = 0
+for tag in lista_depurada:
+    #if contador_tags < 20:
+        #lista_toot.append(tag)
+    #contador_tags += 1
+    lista_toot.append(tag)
+print("############################")
+print("I found " + str(len(lista_toot)) + " hashtags across " + str(n_servers_on) + " instances of mastodon.")
+print("############################")
+for t in lista_toot:
+    print("#" + t[0] + " - Users: " + str(t[1]))# + " Toots: " + str(t[2]))
